@@ -1,21 +1,23 @@
-import { Element, useEditor } from '@craftjs/core';
-import { Tooltip } from '@material-ui/core';
-import React from 'react';
-import styled from 'styled-components';
+import { Element, useEditor } from "@craftjs/core";
+import { Tooltip, Button as MaterialButton } from "@material-ui/core";
+import React, { useState } from "react";
+import styled from "styled-components";
+import lz from "lzutf8";
+import copy from "copy-to-clipboard";
 
-import ButtonSvg from '../../../public/icons/toolbox/button.svg';
-import SquareSvg from '../../../public/icons/toolbox/rectangle.svg';
-import TypeSvg from '../../../public/icons/toolbox/text.svg';
-import YoutubeSvg from '../../../public/icons/toolbox/video-line.svg';
-import { Button } from '../../selectors/Button';
-import { Container } from '../../selectors/Container';
-import { Text } from '../../selectors/Text';
-import { Video } from '../../selectors/Video';
+import ButtonSvg from "../../../public/icons/toolbox/button.svg";
+import SquareSvg from "../../../public/icons/toolbox/rectangle.svg";
+import TypeSvg from "../../../public/icons/toolbox/text.svg";
+import YoutubeSvg from "../../../public/icons/toolbox/video-line.svg";
+import { Button } from "../../selectors/Button";
+import { Container } from "../../selectors/Container";
+import { Text } from "../../selectors/Text";
+import { Video } from "../../selectors/Video";
 
 const ToolboxDiv = styled.div<{ enabled: boolean }>`
   transition: 0.4s cubic-bezier(0.19, 1, 0.22, 1);
-  ${(props) => (!props.enabled ? `width: 0;` : '')}
-  ${(props) => (!props.enabled ? `opacity: 0;` : '')}
+  ${(props) => (!props.enabled ? `width: 0;` : "")}
+  ${(props) => (!props.enabled ? `opacity: 0;` : "")}
 `;
 
 const Item = styled.a<{ move?: boolean }>`
@@ -34,10 +36,15 @@ const Item = styled.a<{ move?: boolean }>`
 export const Toolbox = () => {
   const {
     enabled,
+    actions,
+    query,
     connectors: { create },
   } = useEditor((state) => ({
     enabled: state.options.enabled,
   }));
+
+  const [ stateToLoad, setStateToLoad ] = useState(null);
+  const [ dialogOpen, setDialogOpen ] = useState(false);
 
   return (
     <ToolboxDiv
@@ -89,6 +96,35 @@ export const Toolbox = () => {
             <Item className="m-2 pb-2 cursor-pointer block" move>
               <YoutubeSvg />
             </Item>
+          </Tooltip>
+        </div>
+        
+        <div>
+          <Tooltip title="Copy current state" placement="right">
+            <MaterialButton
+              onClick={() => {
+                // actions.setOptions((options) => (options.enabled = false));
+                const json = query.serialize();
+                copy(lz.encodeBase64(lz.compress(json)));
+                console.log(query.serialize());
+              }}
+            >
+              C
+            </MaterialButton>
+          </Tooltip>
+        </div>
+        <div>
+          <Tooltip title="Paste current state" placement="right">
+            <MaterialButton
+              onClick={() => {
+                const json = query.serialize();
+                actions.setOptions((options) => (options.enabled = false));
+                copy(lz.encodeBase64(lz.compress(json)));
+                console.log(query.serialize());
+              }}
+            >
+              P
+            </MaterialButton>
           </Tooltip>
         </div>
       </div>

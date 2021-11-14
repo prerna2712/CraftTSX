@@ -1,13 +1,15 @@
-import { useEditor } from '@craftjs/core';
-import { Tooltip } from '@material-ui/core';
-import cx from 'classnames';
-import React from 'react';
-import styled from 'styled-components';
+import { useEditor } from "@craftjs/core";
+import { Tooltip, Button as MaterialButton } from "@material-ui/core";
+import cx from "classnames";
+import React from "react";
+import styled from "styled-components";
+import lz from "lzutf8";
+import copy from "copy-to-clipboard";
 
-import Checkmark from '../../../public/icons/check.svg';
-import Customize from '../../../public/icons/customize.svg';
-import RedoSvg from '../../../public/icons/toolbox/redo.svg';
-import UndoSvg from '../../../public/icons/toolbox/undo.svg';
+import Checkmark from "../../../public/icons/check.svg";
+import Customize from "../../../public/icons/customize.svg";
+import RedoSvg from "../../../public/icons/toolbox/redo.svg";
+import UndoSvg from "../../../public/icons/toolbox/undo.svg";
 
 const HeaderDiv = styled.div`
   width: 100%;
@@ -52,11 +54,13 @@ const Item = styled.a<{ disabled?: boolean }>`
 `;
 
 export const Header = () => {
-  const { enabled, canUndo, canRedo, actions } = useEditor((state, query) => ({
-    enabled: state.options.enabled,
-    canUndo: query.history.canUndo(),
-    canRedo: query.history.canRedo(),
-  }));
+  const { enabled, canUndo, canRedo, actions, query } = useEditor(
+    (state, query) => ({
+      enabled: state.options.enabled,
+      canUndo: query.history.canUndo(),
+      canRedo: query.history.canRedo(),
+    })
+  );
 
   return (
     <HeaderDiv className="header text-white transition w-full">
@@ -78,10 +82,10 @@ export const Header = () => {
         <div className="flex">
           <Btn
             className={cx([
-              'transition cursor-pointer',
+              "transition cursor-pointer",
               {
-                'bg-green-400': enabled,
-                'bg-primary': !enabled,
+                "bg-green-400": enabled,
+                "bg-primary": !enabled,
               },
             ])}
             onClick={() => {
@@ -89,8 +93,41 @@ export const Header = () => {
             }}
           >
             {enabled ? <Checkmark /> : <Customize />}
-            {enabled ? 'Finish Editing' : 'Edit'}
+            {enabled ? "Finish Editing" : "Edit"}
           </Btn>
+        </div>
+        <div>
+          <Tooltip title="Copy current state" placement="right">
+            <MaterialButton
+              onClick={() => {
+                // actions.setOptions((options) => (options.enabled = false));
+                const json = query.serialize();
+                copy(lz.encodeBase64(lz.compress(json)));
+                fetch("http://localhost:3000/state", {
+                  headers: {
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
+                  },
+                  method: "POST",
+                  body: JSON.stringify({
+                    state: lz.encodeBase64(lz.compress(json)),
+                  }),
+                })
+                  .then((res) => res.json())
+                  .then(
+                    (result) => {
+                      console.log(result);
+                    },
+                    (error) => {
+                      console.log("error: ", error);
+                    }
+                  );
+                console.log(query.serialize());
+              }}
+            >
+              copy state
+            </MaterialButton>
+          </Tooltip>
         </div>
       </div>
     </HeaderDiv>
